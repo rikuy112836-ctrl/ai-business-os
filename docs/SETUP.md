@@ -5,9 +5,9 @@
 | ① | Superpowers プラグイン | このリポジトリ（`.claude/settings.json`） | ✅ 設定済み |
 | ② | Skills | このリポジトリ（`.claude/skills/`） | ✅ 設定済み |
 | ③ | Subagents | このリポジトリ（`.claude/agents/`） | ✅ 設定済み |
-| ④ | Routines | Claude アカウント | 手順は下記 |
+| ④ | Routines | Claude アカウント | ✅ 3件作成済み（Drive 連携は要設定） |
 | ⑤ | Claude in Chrome | Chrome 拡張 | 手順は下記 |
-| ⑥ | Connectors | claude.ai 設定 | 手順は下記 |
+| ⑥ | Connectors | claude.ai 設定 | Gmail / Drive 接続済み、Notion / Calendar は要接続 |
 | ⑦ | Remote Control | ローカルの Claude Code | 手順は下記 |
 
 ---
@@ -49,6 +49,10 @@ claude.ai/code の **Routines → New routine**（CLI では `/schedule`）で�
 | 月次レポート | 毎月1日 9:00 | 先月 `output/` に作った成果物を一覧にしてまとめて |
 
 作成後はまず **Run now** で1回試して、出力を確認してから定期実行に任せる。
+
+**作成済み（日本時間）:** AIニュースの要約（毎日 8:50）/ 競合投稿のリサーチ（毎週月曜 8:50）/ 月次レポート（毎月1日 8:53）。
+結果は Google Drive の「AI Business OS」フォルダに保存する設定。ただし作成時にコネクタを紐付けられなかったため、
+claude.ai/code の Routines で各ルーチンを開き、Google Drive コネクタを追加すること（未設定の間は結果がセッションに出力され、プッシュ通知が届く）。
 
 ## ⑤ Claude in Chrome
 1. Chrome ウェブストアで「Claude in Chrome」拡張をインストールし、Claude アカウントでログイン
