@@ -51,7 +51,7 @@ const video = {
     }
     this.mode = 'live';
     $('video').innerHTML = '';
-    this.character = createCharacter($('video'));
+    this.character = createCharacter($('video'), { photo: cfg.video?.look === 'photo' ? cfg.video.photo : null });
     const loop = () => {
       const st = STATES[this.current];
       let t = (performance.now() - this.liveStart) / 1000;

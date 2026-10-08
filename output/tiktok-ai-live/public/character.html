@@ -9,14 +9,17 @@
 </style>
 </head>
 <body>
-<!-- 使い方: character.html?state=heart  （tools/make-clips.mjs がコマ撮りに使う） -->
+<!-- 使い方: character.html?state=heart  /  写真モード: character.html?state=talk&photo=assets/person-cutout.png -->
 <div id="c"></div>
 <script type="module">
   import { createCharacter, STATES } from './js/character.js';
   const q = new URLSearchParams(location.search);
   const state = q.get('state') || 'idle';
   const noMouth = q.get('mouth') === 'none';
-  const ch = createCharacter(document.getElementById('c'));
+  const photo = q.get('photo') || null;
+  const ch = createCharacter(document.getElementById('c'), { photo });
+  // 写真の読み込みを待ってからコマ撮りする
+  window.ready = photo ? new Image().decode.call(Object.assign(new Image(), { src: photo })).catch(() => {}) : Promise.resolve();
   window.renderAt = (t) => ch.render(state, t, noMouth ? { mouth: null } : {});
   window.STATES = STATES;
   if (q.get('play') !== '0') {

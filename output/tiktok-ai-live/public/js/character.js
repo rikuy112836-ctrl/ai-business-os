@@ -97,6 +97,7 @@ const TEMPLATE = `
 <ellipse cx="90" cy="1250" rx="320" ry="320" fill="url(#warm)"/>
 <path d="M -40 1920 L -40 1420 Q -40 1330 60 1330 L 1020 1330 Q 1120 1330 1120 1420 L 1120 1920 Z" fill="url(#sofa)"/>
 <path d="M -40 1640 L 1120 1640 L 1120 1920 L -40 1920 Z" fill="#a8977f" opacity="0.6"/>
+<g id="photoLayer"></g>
 <g id="rig" transform="translate(${RIG.x} ${RIG.y}) scale(${RIG.s})">
 <g id="char">
   <g id="torso">
@@ -131,6 +132,9 @@ const TEMPLATE = `
     <g id="mouth" transform="translate(${MOUTH_LOCAL.x} ${MOUTH_LOCAL.y})"></g>
     <ellipse id="screen-glow" cx="540" cy="1150" rx="230" ry="150" fill="url(#screenLight)" opacity="0"/>
   </g>
+  <g id="armL"></g>
+  <g id="armR"></g>
+</g>
   <g id="desk">
     <rect x="-200" y="1640" width="1500" height="900" fill="#3a2c26"/>
     <rect x="-200" y="1640" width="1500" height="14" fill="#5a463c"/>
@@ -138,9 +142,6 @@ const TEMPLATE = `
     <rect x="404" y="1610" width="292" height="24" rx="5" fill="#33343e"/>
   </g>
   <g id="mouse"></g>
-  <g id="armL"></g>
-  <g id="armR"></g>
-</g>
 <g id="fx"></g>
 </g>
 `;
@@ -368,7 +369,38 @@ function cityLights(t) {
   return s;
 }
 
-export function createCharacter(container) {
+// 写真モード：背景を抜いた人物写真（1254x1254 想定）を、キャラの位置に置いて小さく動かす。
+// 写真1枚からは口や手は動かせないので、呼吸・うなずき・揺れだけ。本格的な動きは画像→動画の生成サービスで作った動画に差し替える。
+const PHOTO = { size: 1036, x: -88, y: 342, pivotX: 430, pivotY: 1150 };
+
+function photoPose(state, t) {
+  const breathe = Math.sin((TAU * t) / 4);
+  const q = { x: 0, y: -3 * breathe, rot: 0.4 * Math.sin((TAU * t) / 6), scale: 1 + 0.006 * breathe };
+  if (state === 'talk') {
+    q.rot = 1.1 * Math.sin((TAU * t) / 2);
+    q.y = 5 * Math.abs(Math.sin((TAU * t) / 1)) - 2;
+    q.scale = 1.01;
+  } else if (state === 'dance') {
+    const k = envelope(t, 0.3, 3.6, 4.0);
+    const beat = (TAU * t) / 1.0;
+    q.x = 26 * Math.sin(beat) * k;
+    q.y = -20 * Math.abs(Math.sin(beat)) * k;
+    q.rot = 2.5 * Math.sin(beat) * k;
+  } else if (state === 'thanks') {
+    const k = envelope(t, 0.5, 1.6, 2.2);
+    q.y = 26 * k;
+    q.rot = 0;
+  } else if (state !== 'idle') {
+    const d = STATES[state].duration;
+    const k = envelope(t, 0.4, d - 0.5, d);
+    q.rot = -2 * k;
+    q.scale = 1 + 0.025 * k;
+    q.y = -6 * k;
+  }
+  return q;
+}
+
+export function createCharacter(container, opts = {}) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 1080 1920');
   svg.setAttribute('width', '100%');
@@ -376,6 +408,16 @@ export function createCharacter(container) {
   svg.innerHTML = TEMPLATE;
   container.appendChild(svg);
   const $ = (id) => svg.getElementById(id);
+  let photo = null;
+  if (opts.photo) {
+    $('char').setAttribute('display', 'none');
+    $('mouse').setAttribute('display', 'none');
+    photo = document.createElementNS(NS, 'image');
+    photo.setAttribute('href', opts.photo);
+    photo.setAttribute('width', PHOTO.size);
+    photo.setAttribute('height', PHOTO.size);
+    $('photoLayer').appendChild(photo);
+  }
   const el = {
     lights: $('lights'), char: $('char'), head: $('head'), mouth: $('mouth'),
     armL: $('armL'), armR: $('armR'), glow: $('screen-glow'), mouse: $('mouse'), desk: $('desk'), fx: $('fx'), eyeL: $('eyeL'), eyeR: $('eyeR'),
@@ -395,10 +437,6 @@ export function createCharacter(container) {
     const p = pose(state, t);
     el.lights.innerHTML = cityLights(t);
     el.char.setAttribute('transform', `translate(${p.charX.toFixed(1)} ${p.charY.toFixed(1)}) rotate(${p.charRot.toFixed(2)} 540 1500)`);
-    // 机は体と一緒に揺れないよう、体の動きを打ち消す
-    const still = `rotate(${(-p.charRot).toFixed(2)} 540 1500) translate(${(-p.charX).toFixed(1)} ${(-p.charY).toFixed(1)})`;
-    el.desk.setAttribute('transform', still);
-    el.mouse.setAttribute('transform', still);
     el.head.setAttribute('transform', `translate(${p.headX} ${p.headY.toFixed(1)}) rotate(${p.headRot.toFixed(2)} 540 1200)`);
     const a = armPath(SHOULDER_L, ...p.l);
     const b = armPath(SHOULDER_R, ...p.r);
@@ -413,6 +451,10 @@ export function createCharacter(container) {
     if (opts.mouth === null) el.mouth.innerHTML = '';
     else el.mouth.innerHTML = mouthMarkup(opts.mouth ?? 0, p.mouthHappy && opts.mouth == null);
     el.fx.innerHTML = p.fx;
+    if (photo) {
+      const q = photoPose(state, t);
+      photo.setAttribute('transform', `translate(${(PHOTO.x + q.x).toFixed(1)} ${(PHOTO.y + q.y).toFixed(1)}) rotate(${q.rot.toFixed(2)} ${PHOTO.pivotX - PHOTO.x} ${PHOTO.pivotY - PHOTO.y}) scale(${q.scale.toFixed(4)})`);
+    }
   }
 
   return { svg, render };

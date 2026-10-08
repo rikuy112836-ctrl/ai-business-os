@@ -1,7 +1,8 @@
 // 仮キャラクターの待機/反応動画（public/clips/*.webm）と口パク画像（public/mouth/*.svg）を作る。
 // 本番のキャラクター動画ができたら、このスクリプトは使わずに public/clips/ に同じ名前で置けばよい。
 //   必要: ffmpeg、Playwright（npm i -D playwright && npx playwright install chromium）
-//   実行: node tools/make-clips.mjs [state...]
+//   実行: node tools/make-clips.mjs [state...]            → public/clips/（仮キャラクター）
+//         node tools/make-clips.mjs --photo [state...]    → public/clips-photo/（人物写真。config.json の video.photo）
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -31,12 +32,15 @@ for (const [name, open] of [['closed', 0], ['half', 0.45], ['open', 1]]) {
   fs.writeFileSync(path.join(mouthDir, `${name}.svg`), mouthSvg(open));
 }
 
-const wanted = process.argv.slice(2);
+const args = process.argv.slice(2);
+const usePhoto = args.includes('--photo');
+const wanted = args.filter((a) => !a.startsWith('--'));
 const states = Object.keys(STATES).filter((s) => !wanted.length || wanted.includes(s));
-const clipsDir = path.join(ROOT, 'public', 'clips');
+const clipsDir = path.join(ROOT, 'public', usePhoto ? 'clips-photo' : 'clips');
 fs.mkdirSync(clipsDir, { recursive: true });
 
 const config = loadConfig({ sources: { mock: { enabled: false }, tikfinity: { enabled: false } } });
+const photoParam = usePhoto ? `&photo=${encodeURIComponent(config.video.photo || 'assets/person-cutout.png')}` : '';
 const app = await createApp(config, { quiet: true });
 const port = await app.listen(0);
 const { chromium } = await loadPlaywright();
@@ -45,8 +49,9 @@ const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 
 for (const state of states) {
   // 話す動画は口を描かずに書き出し、配信画面側で口パク画像を重ねる
-  const mouth = state === 'talk' ? '&mouth=none' : '';
-  await page.goto(`http://127.0.0.1:${port}/character.html?state=${state}&play=0${mouth}`);
+  const mouth = state === 'talk' && !usePhoto ? '&mouth=none' : '';
+  await page.goto(`http://127.0.0.1:${port}/character.html?state=${state}&play=0${mouth}${photoParam}`);
+  await page.evaluate(() => window.ready);
   const frames = Math.round(STATES[state].duration * FPS);
   const out = path.join(clipsDir, `${state}.webm`);
   const ff = spawn('ffmpeg', [

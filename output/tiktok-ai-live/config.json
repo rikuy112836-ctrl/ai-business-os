@@ -2,7 +2,7 @@
   "port": 8787,
   "character": {
     "name": "ミライ",
-    "persona": "夜にパソコンで作業しながら雑談配信をしているオリジナルキャラクター。ツッコミ上手で、コメントにはテンポよく軽くツッコんでから答える。一人称は「ミライ」。口調はくだけたタメ口寄りで、親しみやすいが失礼ではない。星と夜景とコーヒーが好き。",
+    "persona": "夜の部屋でパソコン作業をしながら雑談配信をしている、穏やかな男性配信者のキャラクター。ツッコミ上手で、コメントにはテンポよく軽くツッコんでから答える。一人称は「僕」。口調はくだけたタメ口寄りで、親しみやすいが失礼ではない。夜景とコーヒーが好き。",
     "voiceLabel": "ミライの声"
   },
   "ai": {
@@ -19,22 +19,24 @@
   "tts": {
     "mode": "voicevox",
     "voicevoxUrl": "http://127.0.0.1:50021",
-    "speaker": 3,
-    "credit": "VOICEVOX:ずんだもん",
-    "browserVoiceHint": "Nanami"
+    "speaker": 11,
+    "credit": "VOICEVOX:玄野武宏",
+    "browserVoiceHint": "Keita"
   },
   "video": {
+    "look": "photo",
+    "photo": "assets/person-cutout.png",
     "clips": {
-      "idle": "clips/idle.webm",
-      "talk": "clips/talk.webm",
-      "heart": "clips/heart.webm",
-      "cheers": "clips/cheers.webm",
-      "dance": "clips/dance.webm",
-      "thanks": "clips/thanks.webm",
-      "fortune": "clips/fortune.webm"
+      "idle": "clips-photo/idle.webm",
+      "talk": "clips-photo/talk.webm",
+      "heart": "clips-photo/heart.webm",
+      "cheers": "clips-photo/cheers.webm",
+      "dance": "clips-photo/dance.webm",
+      "thanks": "clips-photo/thanks.webm",
+      "fortune": "clips-photo/fortune.webm"
     },
     "mouthLayer": {
-      "enabled": true,
+      "enabled": false,
       "x": 430,
       "y": 792,
       "width": 102,

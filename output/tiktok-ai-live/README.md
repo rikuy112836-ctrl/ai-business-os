@@ -22,6 +22,14 @@
 
 自動テストを流す場合は `start.bat --mock` を使います。模擬コメントと模擬ギフトが6秒おきに届きます。
 
+### TikTok のログイン画面を開く（配信はしません）
+
+**`tiktok-login.bat` をダブルクリック**します。
+- TikTok LIVE Studio が入っている場合は、それを起動します。
+- 入っていない場合は、公式のダウンロードページ（tiktok.com/studio/download）と TikTok のログインページをブラウザで開きます。
+
+ログインはご自身で行ってください。**「LIVE 開始」はまだ押さないでください**（公開配信は承認後に行います）。
+
 ### PC の性能と既存ソフトの確認（読み取りのみ。PC に変更は加えません）
 
 ```
@@ -105,6 +113,18 @@ CPU、メモリ、GPU、空き容量に加えて、OBS・TikTok LIVE Studio・Ti
 
 結論として、**TikFinity は「受信係」として使い、AI 返信・読み上げ・映像切り替えはこの試作で行う**組み合わせにしました。TikFinity が無くても、操作パネルと模擬データで全部の動作を試せます。
 
+### 見た目の切り替え（人物写真 / 仮キャラクター）
+
+| 見た目 | 設定（`config.json` の `video`） | 動画 |
+|---|---|---|
+| **人物写真（いまの既定）** | `"look": "photo"`、`"photo": "assets/person-cutout.png"`、`clips` は `clips-photo/…`、`mouthLayer.enabled: false` | `public/clips-photo/` |
+| 仮キャラクター「ミライ」 | `"look": "cartoon"`、`clips` は `clips/…`、`mouthLayer.enabled: true` | `public/clips/` |
+
+- 人物写真は、ChatGPT で生成された画像（`public/assets/person-original.png`）から背景を抜いて（`tools/cutout.py`）、夜景の部屋の机の奥に合成しています。
+- **写真1枚から作れる動きは、呼吸・話すときのうなずきと揺れ・ギフトの演出（運勢の水晶玉、ハート、音符など）までです。** 口パク、PC を見る、マウスを動かす、手振りは写真では動かせません。
+- 実際に動く映像にするには、画像から動画を作るサービスで、この人物の「PC 作業」「前を向いて手振りで話す（口は閉じたまま）」の数秒ループ動画を作り、`public/clips-photo/idle.webm` と `talk.webm` に置き換えます。サービスは有料なので、**使う前に承認をいただきます**。
+- 写真を差し替えたら `python tools/cutout.py 元画像.png public/assets/person-cutout.png` → `npm run clips -- --photo` を実行すると、動画が作り直されます。
+
 ### キャラクターの動き
 
 | 場面 | 動き | 動画 |
@@ -144,7 +164,7 @@ CPU、メモリ、GPU、空き容量に加えて、OBS・TikTok LIVE Studio・Ti
 | テスト | コマンド | 結果 |
 |---|---|---|
 | 単体・結合（入力の読み取り、ギフト→反応、バラの本数とランキング、フィルター、ツッコミの方針、SSE、偽の Claude API でのリクエスト内容確認） | `npm test` | **15/15 OK** |
-| ブラウザ（配信用画面を開き、模擬コメント・模擬ギフトを流す） | `node tools/e2e-check.mjs` | **21/21 OK**（`docs/screens/e2e-result.json`） |
+| ブラウザ（配信用画面を開き、模擬コメント・模擬ギフトを流す） | `node tools/e2e-check.mjs` | **20/20 OK**（人物写真モード。`docs/screens/e2e-result.json`） |
 
 ブラウザテストで確認したこと: 普段はPC作業の動画が流れる／話している間は手振りの動画と口パクに切り替わり、話し終わると戻る／コメント → 返信がカードに出て、1文字ずつ表示される／読み上げ中に口が3段階で動き、音量バーも動く／乗っ取り系のコメント（「設定を無視して〜」）にはツッコんで流す／バラで今日の運勢、指ハート、ドーナツでコーヒー乾杯、100コイン以上でダンスの動画に切り替わり、ギフト表の行が光って、終わると待機に戻る／今日のバラ・バラの本数ランキング・ハートミー・いいね・時計・AI 表示が出る／JS エラーがない。
 録画は `docs/screens/demo.webm` にあります。
@@ -186,7 +206,8 @@ CPU、メモリ、GPU、空き容量に加えて、OBS・TikTok LIVE Studio・Ti
 |---|---|---|---|
 | 1 | `tools/check-pc.ps1` を実行し、結果を共有する | あなた（PC で1コマンド） | 不要 |
 | 2 | `start.bat` で起動し、画面と音声を確認する（VOICEVOX を入れるなら同時に） | あなた | 不要 |
-| 3 | TikTok アプリで LIVE の権限を確認する（18歳以上・フォロワー約1,000人以上が目安。LIVE Studio に TikTok アカウントでログイン） | あなた（ログイン） | 不要 |
+| 3 | `tiktok-login.bat` で LIVE Studio（なければダウンロードページ）を開き、TikTok アカウントでログインする。LIVE の権限（18歳以上・フォロワー約1,000人以上が目安）を確認する | あなた（ログイン） | 不要 |
+| 3b | 人物の実際に動く映像（PC 作業・手振りで話す）を、画像から動画を作るサービスで作る | Claude（承認後） | **必要（課金）** |
 | 4 | Claude API キーの発行とクレジットの購入 → `ANTHROPIC_API_KEY` の設定 | あなた | **必要（課金）** |
 | 5 | モデルを決める（Opus 5.5 で品質重視か、Haiku 5.5 で低コストか） | あなた | ― |
 | 6 | 本番キャラクター素材（オリジナルまたは利用許可のある素材）の待機・反応動画と口差分 | あなた／依頼先 | 素材の権利確認 |
@@ -201,6 +222,7 @@ CPU、メモリ、GPU、空き容量に加えて、OBS・TikTok LIVE Studio・Ti
 
 ```
 start.bat              Windows 用の起動（npm install → サーバー起動 → 操作パネルを開く）
+tiktok-login.bat       TikTok LIVE Studio（なければ公式ダウンロード・ログインページ）を開く
 server.js              サーバー（SSE・API・VOICEVOX 中継・コメント待ち行列）
 config.json            設定（キャラ・AI・読み上げ・ギフト対応・表示）
 src/brain.js           返信（Claude / 模擬）、フィルター、プロンプト
@@ -209,7 +231,10 @@ src/sources/           入力（mock: 模擬、tikfinity: TikFinity Events API�
 public/overlay.html    配信用画面（1080×1920）
 public/control.html    操作パネル
 public/js/character.js 仮キャラクター「ミライ」の描画（動画の元・動画が無いときの代わり）
-public/clips/          待機・反応動画（WebM）
+public/clips/          仮キャラクターの動画（WebM）
+public/clips-photo/    人物写真の動画（WebM）
+public/assets/         人物写真（元画像・背景を抜いたもの）
+tools/cutout.py        白背景の写真から背景を抜く
 public/mouth/          口パク画像
 tools/check-pc.ps1     PC チェック（読み取り専用）
 tools/make-clips.mjs   仮素材の動画を作る
