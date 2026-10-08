@@ -2,7 +2,8 @@
   "port": 8787,
   "character": {
     "name": "ミライ",
-    "persona": "星が好きな明るいオリジナルキャラクター。夜空の話と甘いものが好き。一人称は「ミライ」。語尾はやわらかい丁寧語。"
+    "persona": "星が好きな明るいオリジナルキャラクター。夜空の話と甘いものが好き。一人称は「ミライ」。語尾はやわらかい丁寧語。",
+    "voiceLabel": "ミライの声"
   },
   "ai": {
     "provider": "auto",
@@ -28,13 +29,14 @@
       "heart": "clips/heart.webm",
       "cheers": "clips/cheers.webm",
       "dance": "clips/dance.webm",
-      "thanks": "clips/thanks.webm"
+      "thanks": "clips/thanks.webm",
+      "fortune": "clips/fortune.webm"
     },
     "mouthLayer": {
       "enabled": true,
-      "x": 540,
-      "y": 1078,
-      "width": 120,
+      "x": 430,
+      "y": 792,
+      "width": 102,
       "images": {
         "closed": "mouth/closed.svg",
         "half": "mouth/half.svg",
@@ -43,23 +45,152 @@
     }
   },
   "reactions": {
-    "heart": { "label": "指ハート", "emoji": "🫰", "speech": "指ハート送っちゃう！" },
-    "cheers": { "label": "乾杯", "emoji": "🥤", "speech": "かんぱーい！" },
-    "dance": { "label": "ダンス", "emoji": "💃", "speech": "お礼にダンスするね！" },
-    "thanks": { "label": "ありがとう", "emoji": "🙇", "speech": "" }
+    "fortune": {
+      "label": "今日の運勢",
+      "emoji": "🔮",
+      "speech": ""
+    },
+    "heart": {
+      "label": "指ハート",
+      "emoji": "🫰",
+      "speech": "指ハート送っちゃう！"
+    },
+    "cheers": {
+      "label": "コーヒーで乾杯",
+      "emoji": "☕",
+      "speech": "コーヒーでかんぱーい！"
+    },
+    "dance": {
+      "label": "ダンス",
+      "emoji": "💃",
+      "speech": "お礼にダンスするね！"
+    },
+    "thanks": {
+      "label": "ありがとう",
+      "emoji": "🙇",
+      "speech": ""
+    }
   },
-  "giftRules": [
-    { "names": ["Finger Heart", "指ハート", "Rose", "バラ"], "reaction": "heart" },
-    { "names": ["Doughnut", "ドーナツ", "Perfume", "香水", "Cheers", "乾杯"], "reaction": "cheers" },
-    { "minCoins": 100, "reaction": "dance" },
-    { "minCoins": 10, "reaction": "cheers" },
-    { "minCoins": 0, "reaction": "heart" }
+  "menu": [
+    {
+      "reaction": "fortune",
+      "icons": [
+        "🌹",
+        "💗"
+      ]
+    },
+    {
+      "reaction": "heart",
+      "icons": [
+        "🫰"
+      ]
+    },
+    {
+      "reaction": "cheers",
+      "icons": [
+        "🍩"
+      ]
+    },
+    {
+      "reaction": "dance",
+      "icons": [
+        "🌌"
+      ]
+    }
   ],
+  "giftRules": [
+    {
+      "names": [
+        "Rose",
+        "バラ",
+        "Heart Me",
+        "ハートミー"
+      ],
+      "reaction": "fortune"
+    },
+    {
+      "names": [
+        "Finger Heart",
+        "指ハート"
+      ],
+      "reaction": "heart"
+    },
+    {
+      "names": [
+        "Doughnut",
+        "ドーナツ",
+        "Coffee",
+        "コーヒー"
+      ],
+      "reaction": "cheers"
+    },
+    {
+      "minCoins": 100,
+      "reaction": "dance"
+    },
+    {
+      "minCoins": 10,
+      "reaction": "cheers"
+    },
+    {
+      "minCoins": 0,
+      "reaction": "heart"
+    }
+  ],
+  "goal": {
+    "label": "今日のバラ",
+    "names": [
+      "Rose",
+      "バラ"
+    ],
+    "target": 10000,
+    "unit": "本",
+    "icon": "🌹"
+  },
+  "counter": {
+    "label": "ハートミー",
+    "names": [
+      "Heart Me",
+      "ハートミー"
+    ],
+    "unit": "個",
+    "icon": "💗"
+  },
+  "likesGoal": 10000,
+  "fortunes": {
+    "results": [
+      "大吉",
+      "中吉",
+      "小吉",
+      "吉",
+      "末吉"
+    ],
+    "lucky": [
+      "マグカップ",
+      "星形のもの",
+      "あたたかい飲み物",
+      "夜景",
+      "ヘッドホン",
+      "甘いもの"
+    ]
+  },
   "followReaction": "thanks",
-  "ngWords": ["死ね", "殺す", "住所", "電話番号", "LINE交換"],
+  "ngWords": [
+    "死ね",
+    "殺す",
+    "住所",
+    "電話番号",
+    "LINE交換"
+  ],
   "sources": {
-    "mock": { "enabled": false, "intervalMs": 6000 },
-    "tikfinity": { "enabled": false, "url": "ws://127.0.0.1:21213/" }
+    "mock": {
+      "enabled": false,
+      "intervalMs": 6000
+    },
+    "tikfinity": {
+      "enabled": false,
+      "url": "ws://127.0.0.1:21213/"
+    }
   },
   "disclosure": "AIキャラクター配信｜返答・音声はAIが自動生成しています"
 }

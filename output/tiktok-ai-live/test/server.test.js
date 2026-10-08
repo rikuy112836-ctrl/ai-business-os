@@ -66,11 +66,16 @@ test('コメント→返信、ギフト→反応・集計、フィルター', as
   const gift = await s.wait((e) => e.type === 'gift');
   assert.equal(gift.data.reaction, 'dance');
   assert.match(gift.data.speech, /ギフさん、ありがとう/);
-  const stats = await s.wait((e) => e.type === 'stats' && e.data.totals.coins === 100);
-  assert.deepEqual(stats.data.ranking[0], { name: 'ギフ', coins: 100, gifts: 1 });
+  await s.wait((e) => e.type === 'stats' && e.data.totals.coins === 100);
+
+  await post(port, '/api/event', { event: 'gift', data: { uniqueId: 'r1', nickname: 'みれい', giftName: 'Rose', diamondCount: 1, repeatCount: 5, repeatEnd: true } });
+  const fortune = await s.wait((e) => e.type === 'gift' && e.data.reaction === 'fortune');
+  assert.match(fortune.data.speech, /みれいさんの今日の運勢は….+！ラッキーアイテムは/);
+  const stats = await s.wait((e) => e.type === 'stats' && e.data.totals.goal === 5);
+  assert.deepEqual(stats.data.ranking[0], { name: 'みれい', coins: 5, gifts: 5, goal: 5, value: 5 });
 
   const state = await (await fetch(`http://127.0.0.1:${port}/api/state`)).json();
-  assert.equal(state.totals.giftCount, 1);
+  assert.equal(state.totals.giftCount, 6);
   const page = await fetch(`http://127.0.0.1:${port}/overlay.html`);
   assert.equal(page.status, 200);
   assert.equal((await fetch(`http://127.0.0.1:${port}/../server.js`)).status, 404);

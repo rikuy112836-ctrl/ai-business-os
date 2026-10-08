@@ -1,87 +1,96 @@
+/* 参考レイアウト：中央上に時計、右にギフト表・目標とランキング、中段にコメントと返信のカード。
+   縦長スマホでは配信画面の左右が約10%ずつ切れるため、文字は x=120〜960 の内側に置く。
+   下 1/3 は TikTok のコメント欄が重なるので、カードは y≈1300 までに収める。 */
 :root {
-  --ink: #2a1f45;
-  --paper: rgba(255, 255, 255, 0.92);
-  --accent: #ff5c93;
-  --accent2: #7fd6c2;
-  --shadow: 0 10px 30px rgba(20, 10, 40, 0.35);
+  --glass: rgba(28, 22, 40, 0.62);
+  --glass-line: rgba(255, 255, 255, 0.14);
+  --text: #fff;
+  --sub: rgba(255, 255, 255, 0.62);
+  --pink: #ff5c8a;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: #000;
-  font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", "IPAPGothic", sans-serif;
+  font-family: "Noto Sans JP", "M PLUS Rounded 1c", "Hiragino Sans", "Yu Gothic UI", "Meiryo", "IPAPGothic", sans-serif;
 }
-#stage {
-  position: absolute; left: 0; top: 0; width: 1080px; height: 1920px;
-  transform-origin: 0 0; overflow: hidden; background: #2d2357;
-}
+#stage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; overflow: hidden; background: #0b0d20; }
 #video, #video > * { position: absolute; inset: 0; width: 100%; height: 100%; }
 #video video { object-fit: cover; opacity: 0; }
 #video video.on { opacity: 1; }
 #mouth { position: absolute; pointer-events: none; display: none; }
-#hud { position: absolute; inset: 0; color: var(--ink); }
+#hud { position: absolute; inset: 0; color: var(--text); }
 
-/* TikTok の上部UI（配信者名・視聴者数）は上 ~170px を覆うので、その下から置く */
-#topbar { position: absolute; left: 36px; right: 36px; top: 180px; display: flex; justify-content: space-between; align-items: stretch; }
-#clock, #stats { background: var(--paper); border-radius: 26px; box-shadow: var(--shadow); padding: 14px 26px; }
-#clock { display: flex; flex-direction: column; justify-content: center; }
-#time { font-size: 64px; font-weight: 800; line-height: 1; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
-#date { font-size: 24px; font-weight: 500; opacity: 0.7; margin-top: 4px; }
-#stats { display: flex; gap: 26px; align-items: center; }
-#stats > div { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
-#stats .k { font-size: 22px; opacity: 0.65; }
-#stats span:not(.k) { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
-
-#ai-badge {
-  position: absolute; left: 36px; right: 36px; top: 330px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  background: rgba(30, 20, 60, 0.78); color: #fff; border-radius: 20px; padding: 12px 22px; font-size: 26px; font-weight: 500;
+.glass {
+  position: absolute; background: var(--glass); border: 1.5px solid var(--glass-line); border-radius: 26px;
+  box-shadow: var(--shadow); backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
 }
-#ai-badge b { background: var(--accent2); color: var(--ink); border-radius: 10px; padding: 2px 12px; font-weight: 800; }
-#ai-badge small { width: 100%; font-size: 20px; opacity: 0.75; padding-left: 4px; }
+.bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.22); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--pink); border-radius: 4px; transition: width 0.6s; }
 
-#ranking {
-  position: absolute; left: 36px; top: 450px; width: 330px; background: var(--paper); border-radius: 26px;
-  box-shadow: var(--shadow); padding: 16px 20px 12px;
+/* いいね */
+#likes { left: 123px; top: 326px; width: 300px; padding: 10px 18px 12px; display: grid; grid-template-columns: auto auto 1fr; gap: 0 10px; align-items: center; border-radius: 20px; }
+#likes .heart { color: var(--pink); font-size: 26px; }
+#likes b { font-size: 24px; }
+#likes-num { font-size: 22px; text-align: right; font-variant-numeric: tabular-nums; }
+#likes .bar { grid-column: 1 / -1; margin-top: 8px; height: 7px; }
+#ai-chip {
+  position: absolute; left: 123px; top: 418px; font-size: 20px; font-weight: 700; padding: 5px 14px; border-radius: 99px;
+  background: rgba(127, 214, 194, 0.9); color: #1b1630;
 }
-#ranking h2 { margin: 0 0 8px; font-size: 26px; color: var(--accent); }
-#ranking ol { margin: 0; padding: 0; list-style: none; counter-reset: r; }
-#ranking li { counter-increment: r; display: flex; align-items: center; gap: 10px; font-size: 25px; padding: 5px 0; border-top: 1px dashed rgba(42, 31, 69, 0.15); }
-#ranking li:first-child { border-top: none; }
-#ranking li::before { content: counter(r); width: 36px; height: 36px; border-radius: 50%; background: #eee; display: grid; place-items: center; font-weight: 800; font-size: 22px; flex: none; }
-#ranking li:nth-child(1)::before { background: #ffd54a; }
-#ranking li:nth-child(2)::before { background: #d9dde6; }
-#ranking li:nth-child(3)::before { background: #f0b27a; }
-#ranking li .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#ranking li .c { font-weight: 800; font-variant-numeric: tabular-nums; }
-#ranking li.empty { font-size: 22px; opacity: 0.6; }
-#ranking li.empty::before { display: none; }
 
-#bubble {
-  position: absolute; left: 400px; right: 36px; top: 450px; min-height: 150px; background: #fff; border-radius: 32px;
-  box-shadow: var(--shadow); padding: 20px 28px; transition: opacity 0.25s, transform 0.25s;
-}
-#bubble::after {
-  content: ""; position: absolute; left: 120px; bottom: -34px; border: 20px solid transparent; border-top: 26px solid #fff; border-bottom: 0;
-}
-#bubble-from { font-size: 23px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#bubble-text { font-size: 40px; font-weight: 800; line-height: 1.35; margin-top: 6px; }
-#bubble.gift #bubble-text { color: var(--accent); }
+/* 時計 */
+#clock { position: absolute; left: 440px; width: 340px; top: 300px; text-align: center; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45); pointer-events: none; }
+#time { font-size: 104px; font-weight: 500; line-height: 1; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+#date { font-size: 30px; font-weight: 500; margin-top: 8px; }
 
-#banner {
-  position: absolute; left: 90px; right: 90px; top: 1230px; display: flex; align-items: center; gap: 22px;
-  background: linear-gradient(90deg, #ff5c93, #ff9a5c); color: #fff; border-radius: 40px; padding: 22px 34px;
-  box-shadow: var(--shadow); animation: pop 0.45s cubic-bezier(.2,1.6,.4,1);
-}
-#banner-emoji { font-size: 84px; line-height: 1; }
-#banner b { display: block; font-size: 52px; }
-#banner span:not(#banner-emoji) { font-size: 28px; opacity: 0.95; }
+/* ギフト表 */
+#menu { left: 668px; top: 456px; width: 288px; padding: 14px 18px; }
+#menu .row { display: flex; align-items: center; gap: 12px; height: 60px; border-radius: 14px; padding: 0 8px; margin: 0 -8px; transition: background 0.2s; }
+#menu .icons { display: flex; gap: 0; font-size: 34px; width: 80px; white-space: nowrap; letter-spacing: -4px; }
+#menu .label { font-size: 27px; font-weight: 700; white-space: nowrap; }
+#menu .row.active { background: rgba(255, 92, 138, 0.45); animation: pulse 0.8s ease-in-out infinite alternate; }
+@keyframes pulse { from { box-shadow: 0 0 0 0 rgba(255, 92, 138, 0.0); } to { box-shadow: 0 0 22px 4px rgba(255, 92, 138, 0.7); } }
 
-.hidden { opacity: 0 !important; transform: translateY(16px); pointer-events: none; }
-#banner.hidden { display: none; }
-@keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+/* 目標とランキング */
+#goal { left: 668px; top: 726px; width: 288px; padding: 14px 18px 12px; }
+.goal-head, .counter { display: flex; align-items: center; gap: 10px; }
+.goal-head { font-size: 25px; }
+.goal-head b { flex: 1; white-space: nowrap; }
+#goal-num, #counter-num { color: var(--pink); font-weight: 900; font-variant-numeric: tabular-nums; }
+#goal .bar { margin: 10px 0 8px; }
+#rank-list { list-style: none; margin: 0; padding: 0; counter-reset: r; }
+#rank-list li { counter-increment: r; display: flex; gap: 10px; font-size: 23px; line-height: 38px; }
+#rank-list li::before { content: counter(r); color: var(--pink); font-weight: 900; width: 18px; }
+#rank-list .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#rank-list .v { color: var(--sub); font-variant-numeric: tabular-nums; }
+#rank-list li.empty { color: var(--sub); font-size: 21px; }
+#rank-list li.empty::before { content: ""; width: 0; }
+.counter { font-size: 24px; border-top: 1px solid var(--glass-line); margin-top: 6px; padding-top: 8px; }
+.counter b { flex: 1; }
 
+/* コメントと返信のカード */
+.card { left: 373px; width: 582px; box-sizing: border-box; padding: 16px 24px; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 23px; }
+.card-head > span { color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; }
+#comment-card { top: 920px; }
+#c-text { font-size: 31px; margin-top: 6px; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+#c-text.muted { color: var(--sub); }
+#comment-card.gift #c-kind { color: var(--pink); }
+#reply-card { top: 1048px; min-height: 236px; }
+#reply-card .ai { font-size: 16px; font-weight: 900; color: #1b1630; background: #7fd6c2; border-radius: 6px; padding: 1px 7px; margin-left: 10px; vertical-align: 3px; }
+#r-text { font-size: 35px; font-weight: 900; line-height: 1.42; margin: 8px 0 10px; min-height: 100px; }
+.card-foot { display: flex; align-items: center; gap: 14px; }
+#wave { flex: 1; height: 26px; display: flex; align-items: center; gap: 3px; }
+#wave i { flex: 1; height: 3px; background: rgba(255, 255, 255, 0.45); border-radius: 2px; }
+#wave i.on { background: #fff; }
+#voice-label { font-size: 21px; color: var(--sub); white-space: nowrap; }
+#disclosure { font-size: 19px; color: var(--sub); margin-top: 8px; border-top: 1px solid var(--glass-line); padding-top: 7px; }
+
+.hidden { opacity: 0 !important; pointer-events: none; }
 #audio-unlock {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: inherit; font-size: 36px; font-weight: 800;
-  padding: 24px 40px; border: none; border-radius: 24px; background: var(--accent); color: #fff; cursor: pointer; box-shadow: var(--shadow);
+  padding: 24px 40px; border: none; border-radius: 24px; background: var(--pink); color: #fff; cursor: pointer; box-shadow: var(--shadow);
 }
 #audio-unlock.hidden { display: none; }
-#conn { position: absolute; left: 36px; bottom: 36px; background: #c62828; color: #fff; padding: 10px 18px; border-radius: 12px; font-size: 24px; }
+#conn { position: absolute; left: 123px; top: 470px; background: #c62828; color: #fff; padding: 8px 16px; border-radius: 12px; font-size: 22px; }
 #conn.hidden { display: none; }

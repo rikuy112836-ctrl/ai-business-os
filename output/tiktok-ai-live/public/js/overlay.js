@@ -21,7 +21,7 @@ fit();
 function tick() {
   const d = new Date();
   $('time').textContent = d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-  $('date').textContent = d.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+  $('date').textContent = d.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'long' });
 }
 setInterval(tick, 1000);
 tick();
@@ -186,17 +186,19 @@ const tts = {
     this.analyser.connect(this.ctx.destination);
   },
   // 文字数から話す時間を見積もり、口を動かす（音が出せない時の代わり）
-  async silent(text) {
+  async silent(text, onTick) {
     const ms = 700 + text.length * 120;
     const t0 = performance.now();
     while (performance.now() - t0 < ms) {
       const t = (performance.now() - t0) / 1000;
-      lips.set(0.5 + 0.5 * Math.sin(t * 18) * Math.sin(t * 5.3));
+      const level = 0.5 + 0.5 * Math.sin(t * 18) * Math.sin(t * 5.3);
+      lips.set(level);
+      onTick((performance.now() - t0) / ms, level);
       await new Promise((r) => setTimeout(r, 50));
     }
     lips.set(0);
   },
-  async voicevox(text) {
+  async voicevox(text, onTick) {
     const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}`);
     if (!res.ok) throw new Error('voicevox unavailable');
     const url = URL.createObjectURL(await res.blob());
@@ -210,7 +212,9 @@ const tts = {
         this.analyser.getByteTimeDomainData(buf);
         let sum = 0;
         for (const b of buf) sum += ((b - 128) / 128) ** 2;
-        lips.set(Math.min(1, Math.sqrt(sum / buf.length) * 6));
+        const level = Math.min(1, Math.sqrt(sum / buf.length) * 6);
+        lips.set(level);
+        onTick(this.audio.duration ? this.audio.currentTime / this.audio.duration : 0, level);
         raf = requestAnimationFrame(meter);
       };
       this.audio.onended = () => { cancelAnimationFrame(raf); resolve(); };
@@ -218,8 +222,8 @@ const tts = {
       this.audio.play().then(meter, reject);
     }).finally(() => { lips.set(0); URL.revokeObjectURL(url); });
   },
-  browser(text) {
-    if (!('speechSynthesis' in window) || !this.voice) return this.silent(text);
+  browser(text, onTick) {
+    if (!('speechSynthesis' in window) || !this.voice) return this.silent(text, onTick);
     return new Promise((resolve) => {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'ja-JP';
@@ -229,9 +233,12 @@ const tts = {
       let speaking = true;
       const flap = async () => {
         const t0 = performance.now();
+        const est = 400 + text.length * 140;
         while (speaking) {
           const t = (performance.now() - t0) / 1000;
-          lips.set(0.5 + 0.5 * Math.sin(t * 17) * Math.sin(t * 4.1));
+          const level = 0.5 + 0.5 * Math.sin(t * 17) * Math.sin(t * 4.1);
+          lips.set(level);
+          onTick(Math.min(0.97, (performance.now() - t0) / est), level);
           await new Promise((r) => setTimeout(r, 50));
         }
         lips.set(0);
@@ -244,79 +251,144 @@ const tts = {
       flap();
     });
   },
-  async speak(text) {
+  async speak(text, onTick = () => {}) {
     try {
-      if (this.mode === 'voicevox') return await this.voicevox(text);
+      if (this.mode === 'voicevox') return await this.voicevox(text, onTick);
     } catch {
       console.warn('VOICEVOX に接続できないため、ブラウザの音声で読み上げます');
       this.mode = 'browser';
     }
-    if (this.mode === 'browser') return this.browser(text);
-    return this.silent(text);
+    if (this.mode === 'browser') return this.browser(text, onTick);
+    return this.silent(text, onTick);
   },
 };
 
-// ---------- 吹き出しと読み上げの順番待ち ----------
+// ---------- コメントカードと返信カード（返信は読み上げに合わせて1文字ずつ出す） ----------
+const WAVE_BARS = 44;
+const wave = {
+  history: new Array(WAVE_BARS).fill(0),
+  els: [],
+  last: 0,
+  init() {
+    const w = $('wave');
+    for (let i = 0; i < WAVE_BARS; i++) w.appendChild(document.createElement('i'));
+    this.els = [...w.children];
+  },
+  push(level) {
+    const now = performance.now();
+    if (now - this.last < 55) return;
+    this.last = now;
+    this.history.shift();
+    this.history.push(level);
+    this.draw();
+  },
+  clear() {
+    this.history.fill(0);
+    this.draw();
+  },
+  draw() {
+    this.history.forEach((v, i) => {
+      const el = this.els[i];
+      el.style.height = `${Math.round(3 + v * 23)}px`;
+      el.classList.toggle('on', v > 0.05);
+    });
+  },
+};
+
+function showComment(user, text, kind = 'コメント') {
+  $('c-user').textContent = user;
+  $('c-kind').textContent = kind;
+  const t = $('c-text');
+  t.textContent = text;
+  t.classList.remove('muted');
+  $('comment-card').classList.toggle('gift', kind !== 'コメント');
+}
+
 const speechQueue = [];
 let speakingNow = false;
 async function speakNext() {
   if (speakingNow || !speechQueue.length) return;
   speakingNow = true;
   const item = speechQueue.shift();
-  const b = $('bubble');
-  $('bubble-from').textContent = item.from;
-  $('bubble-text').textContent = item.text;
-  b.classList.toggle('gift', item.kind === 'gift');
-  b.classList.remove('hidden');
+  showComment(item.user, item.comment, item.kind);
+  $('r-to').textContent = item.user ? `${item.user} ＾` : '';
+  const out = $('r-text');
+  const chars = [...item.text];
+  out.textContent = '';
   try {
-    await tts.speak(item.text);
+    await tts.speak(item.text, (progress, level) => {
+      out.textContent = chars.slice(0, Math.ceil(Math.min(1, progress * 1.1) * chars.length)).join('');
+      wave.push(level);
+    });
   } finally {
-    await new Promise((r) => setTimeout(r, 1200));
-    if (!speechQueue.length) b.classList.add('hidden');
+    out.textContent = item.text;
+    wave.clear();
+    await new Promise((r) => setTimeout(r, 900));
     speakingNow = false;
     speakNext();
   }
 }
 function say(item) {
   // ギフトのお礼が続いたときは、まだ読んでいない古いお礼を飛ばして映像と合わせる
-  if (item.kind === 'gift') {
-    for (let i = speechQueue.length - 1; i >= 0; i--) if (speechQueue[i].kind === 'gift') speechQueue.splice(i, 1);
+  if (item.isGift) {
+    for (let i = speechQueue.length - 1; i >= 0; i--) if (speechQueue[i].isGift) speechQueue.splice(i, 1);
   }
   speechQueue.push(item);
   if (speechQueue.length > 4) speechQueue.splice(0, speechQueue.length - 4);
   speakNext();
 }
 
-// ---------- ギフト反応の順番待ち ----------
+// ---------- ギフト表とギフト反応の順番待ち ----------
+function renderMenu(cfg) {
+  const menu = $('menu');
+  menu.innerHTML = '';
+  for (const m of cfg.menu || []) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.reaction = m.reaction;
+    const icons = document.createElement('span');
+    icons.className = 'icons';
+    icons.textContent = (m.icons || []).join('');
+    const label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = cfg.reactions[m.reaction]?.label || m.reaction;
+    row.append(icons, label);
+    menu.appendChild(row);
+  }
+}
+
 const reactionQueue = [];
 function nextReaction() {
   if (video.current !== 'idle' || !reactionQueue.length) return;
   const r = reactionQueue.shift();
-  $('banner-emoji').textContent = r.emoji || '🎁';
-  $('banner-title').textContent = `${r.label || ''}！`;
-  $('banner-sub').textContent = r.follow ? `${r.user}さん フォロー` : `${r.user}さん ${r.giftName} ×${r.count}`;
-  const banner = $('banner');
-  banner.classList.remove('hidden');
-  banner.style.animation = 'none';
-  void banner.offsetWidth;
-  banner.style.animation = '';
+  const row = document.querySelector(`#menu .row[data-reaction="${r.reaction}"]`);
+  if (row) row.classList.add('active');
   video.onReactionEnd = () => {
-    banner.classList.add('hidden');
+    if (row) row.classList.remove('active');
     setTimeout(nextReaction, 250);
   };
   video.play(r.reaction);
 }
 
 // ---------- 集計表示 ----------
-const fmt = (n) => (n >= 10000 ? `${(n / 10000).toFixed(1)}万` : n.toLocaleString('ja-JP'));
+let CFG = null;
+const fmt = (n) => n.toLocaleString('ja-JP');
+const pct = (a, b) => `${Math.min(100, (a / Math.max(1, b)) * 100).toFixed(1)}%`;
 function renderStats({ totals, ranking }) {
-  $('gifts').textContent = fmt(totals.giftCount);
-  $('coins').textContent = fmt(totals.coins);
-  $('likes').textContent = fmt(totals.likes);
+  const likesGoal = CFG?.likesGoal || 10000;
+  $('likes-num').textContent = `${fmt(totals.likes)}/${fmt(likesGoal)}`;
+  $('likes-bar').style.width = pct(totals.likes, likesGoal);
+  const goal = CFG?.goal;
+  if (goal) {
+    $('goal-num').textContent = `${totals.goal}/${goal.target}`;
+    $('goal-bar').style.width = pct(totals.goal, goal.target);
+  }
+  const counter = CFG?.counter;
+  if (counter) $('counter-num').textContent = `${fmt(totals.counter)}${counter.unit}`;
   const list = $('rank-list');
   list.innerHTML = '';
   if (!ranking.length) {
-    list.innerHTML = '<li class="empty">まだギフトはありません</li>';
+    list.innerHTML = `<li class="empty">${goal ? `${goal.label.replace('今日の', '')}を贈ると載ります` : 'まだギフトはありません'}</li>`;
     return;
   }
   for (const r of ranking) {
@@ -324,12 +396,32 @@ function renderStats({ totals, ranking }) {
     const n = document.createElement('span');
     n.className = 'n';
     n.textContent = r.name;
-    const c = document.createElement('span');
-    c.className = 'c';
-    c.textContent = fmt(r.coins);
-    li.append(n, c);
+    const v = document.createElement('span');
+    v.className = 'v';
+    v.textContent = goal ? `${fmt(r.value)}${goal.unit}` : `${fmt(r.value)}コイン`;
+    li.append(n, v);
     list.appendChild(li);
   }
+}
+
+function applyConfig(cfg) {
+  CFG = cfg;
+  renderMenu(cfg);
+  if (cfg.goal) {
+    $('goal-icon').textContent = cfg.goal.icon || '';
+    $('goal-label').textContent = cfg.goal.label;
+  } else $('goal').style.display = 'none';
+  if (cfg.counter) {
+    $('counter-icon').textContent = cfg.counter.icon || '';
+    $('counter-label').textContent = cfg.counter.label;
+  } else document.querySelector('#goal .counter').style.display = 'none';
+  $('r-name').textContent = cfg.character.name;
+  $('voice-label').textContent = cfg.character.voiceLabel || `${cfg.character.name}の声`;
+  $('r-text').textContent = `こんばんは、${cfg.character.name}です。コメントしてね`;
+  const credit = cfg.tts.mode === 'voicevox' && cfg.tts.credit ? ` ／ 音声：${cfg.tts.credit}` : '';
+  $('disclosure').textContent = `${cfg.disclosure}${credit}`;
+  wave.init();
+  wave.draw();
 }
 
 // ---------- サーバー接続 ----------
@@ -339,12 +431,11 @@ function connect() {
   es.addEventListener('hello', async (e) => {
     $('conn').classList.add('hidden');
     const d = JSON.parse(e.data);
+    if (!started) applyConfig(d.config);
     renderStats(d);
     if (started) return;
     started = true;
     const cfg = d.config;
-    $('disclosure').textContent = cfg.disclosure;
-    $('credit').textContent = `キャラクター：${cfg.character.name}（オリジナル・仮素材）${cfg.tts.mode === 'voicevox' && cfg.tts.credit ? ` ／ 音声：${cfg.tts.credit}` : ''}`;
     lips.init(cfg);
     tts.init(cfg);
     await video.init(cfg);
@@ -353,14 +444,14 @@ function connect() {
   });
   es.addEventListener('reply', (e) => {
     const d = JSON.parse(e.data);
-    say({ from: `${d.user}「${d.comment}」`, text: d.text, kind: 'reply' });
+    say({ user: d.user, comment: d.comment, kind: 'コメント', text: d.text });
   });
   es.addEventListener('gift', (e) => {
     const d = JSON.parse(e.data);
     reactionQueue.push(d);
     if (reactionQueue.length > 6) reactionQueue.shift();
     nextReaction();
-    say({ from: d.follow ? `${d.user}さんがフォロー` : `${d.user}さんから ${d.giftName} ×${d.count}`, text: d.speech, kind: 'gift' });
+    say({ user: d.user, comment: d.follow ? 'フォローしてくれました' : `${d.giftName} ×${d.count} を贈りました`, kind: d.follow ? 'フォロー' : `ギフト・${d.label || ''}`, text: d.speech, isGift: true });
   });
   es.addEventListener('stats', (e) => renderStats(JSON.parse(e.data)));
   es.onerror = () => $('conn').classList.remove('hidden');
@@ -368,4 +459,4 @@ function connect() {
 connect();
 
 // テスト・確認用
-window.__overlay = { video, lips, tts, reactionQueue, speechQueue };
+window.__overlay = { video, lips, tts, wave, reactionQueue, speechQueue };

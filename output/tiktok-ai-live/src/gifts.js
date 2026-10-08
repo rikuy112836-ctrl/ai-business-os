@@ -59,19 +59,29 @@ export function pickReaction(config, gift) {
   return 'heart';
 }
 
-export function createBoard() {
+const nameIn = (names, giftName) => (names || []).some((n) => n.toLowerCase() === giftName.toLowerCase());
+
+// goal: 目標を数えるギフト（例: 今日のバラ 57/10000）。ランキングもこの本数順。
+// counter: 別に個数を出すギフト（例: ハートミー 10個）
+export function createBoard(config = {}) {
   const users = new Map();
-  const totals = { giftCount: 0, coins: 0, likes: 0, follows: 0, comments: 0 };
+  const totals = { giftCount: 0, coins: 0, likes: 0, follows: 0, comments: 0, goal: 0, counter: 0 };
+  const byGoal = !!config.goal;
 
   return {
     totals,
     addGift(gift) {
       totals.giftCount += gift.count;
       totals.coins += gift.coins;
-      const u = users.get(gift.user.id) || { id: gift.user.id, name: gift.user.name, coins: 0, gifts: 0 };
+      const u = users.get(gift.user.id) || { id: gift.user.id, name: gift.user.name, coins: 0, gifts: 0, goal: 0 };
       u.name = gift.user.name;
       u.coins += gift.coins;
       u.gifts += gift.count;
+      if (byGoal && nameIn(config.goal.names, gift.giftName)) {
+        u.goal += gift.count;
+        totals.goal += gift.count;
+      }
+      if (config.counter && nameIn(config.counter.names, gift.giftName)) totals.counter += gift.count;
       users.set(u.id, u);
     },
     addLike(n) { totals.likes += n; },
@@ -79,21 +89,22 @@ export function createBoard() {
     addComment() { totals.comments += 1; },
     ranking(n = 5) {
       return [...users.values()]
-        .sort((a, b) => b.coins - a.coins || b.gifts - a.gifts)
+        .filter((u) => (byGoal ? u.goal > 0 : true))
+        .sort((a, b) => (byGoal ? b.goal - a.goal : 0) || b.coins - a.coins || b.gifts - a.gifts)
         .slice(0, n)
-        .map(({ name, coins, gifts }) => ({ name, coins, gifts }));
+        .map(({ id, name, coins, gifts, goal }) => ({ id, name, coins, gifts, goal, value: byGoal ? goal : coins }));
     },
+    // 返信の優先度用：本数ランキング上位、またはコインの多い上位3人
     isTopGifter(id) {
-      const top = this.ranking(3);
-      const u = users.get(id);
-      return !!u && top.some((r) => r.name === u.name && r.coins === u.coins);
+      const byCoins = [...users.values()].sort((a, b) => b.coins - a.coins).slice(0, 3);
+      return this.ranking(3).some((r) => r.id === id) || byCoins.some((u) => u.id === id && u.coins > 0);
     },
     reset() {
       users.clear();
       for (const k of Object.keys(totals)) totals[k] = 0;
     },
     snapshot() {
-      return { totals: { ...totals }, ranking: this.ranking(5) };
+      return { totals: { ...totals }, ranking: this.ranking(3).map(({ id, ...r }) => r) };
     },
   };
 }

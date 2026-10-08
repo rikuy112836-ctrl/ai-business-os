@@ -33,7 +33,7 @@ export async function createApp(config, { quiet = false } = {}) {
     for (const res of clients) res.write(payload);
   }
 
-  const board = createBoard();
+  const board = createBoard(config);
   const brain = await createBrain(config, { log });
   const status = { provider: brain.provider, model: brain.provider === 'claude' ? config.ai.model : null, mock: false, tikfinity: 'off' };
   log(`返信エンジン: ${brain.provider === 'claude' ? `Claude（${config.ai.model}）` : '模擬返信（APIキー未設定・無料）'}`);
@@ -89,6 +89,16 @@ export async function createApp(config, { quiet = false } = {}) {
     }
   }
 
+  // 「今日の運勢」のセリフ（API を使わない定型。毎回ランダム）
+  let fortuneSeed = Date.now();
+  function fortuneText(name) {
+    const f = config.fortunes || { results: ['大吉'], lucky: ['星'] };
+    fortuneSeed = (fortuneSeed * 16807) % 2147483647;
+    const res = f.results[fortuneSeed % f.results.length];
+    const lucky = f.lucky[Math.floor(fortuneSeed / 7) % f.lucky.length];
+    return `${name.slice(0, 10)}さんの今日の運勢は…${res}！ラッキーアイテムは${lucky}だよ`;
+  }
+
   // ---- イベントの入口（模擬・TikFinity・操作パネル共通） ----
   function handleRaw(raw, origin = 'panel') {
     const ev = normalizeEvent(raw);
@@ -98,7 +108,7 @@ export async function createApp(config, { quiet = false } = {}) {
       board.addGift(ev);
       const reaction = pickReaction(config, ev);
       const r = config.reactions[reaction] || {};
-      const speech = `${ev.user.name.slice(0, 10)}さん、ありがとう！${r.speech || ''}`;
+      const speech = reaction === 'fortune' ? fortuneText(ev.user.name) : `${ev.user.name.slice(0, 10)}さん、ありがとう！${r.speech || ''}`;
       send('gift', { user: ev.user.name, giftName: ev.giftName, count: ev.count, coins: ev.coins, reaction, label: r.label, emoji: r.emoji, speech });
       log(`ギフト(${origin}) ${ev.user.name} ${ev.giftName}×${ev.count}（${ev.coins}コイン）→ ${r.label || reaction}`);
     } else if (ev.type === 'follow') {
@@ -146,7 +156,8 @@ export async function createApp(config, { quiet = false } = {}) {
 
   function publicConfig() {
     return {
-      character: { name: config.character.name },
+      character: { name: config.character.name, voiceLabel: config.character.voiceLabel },
+      menu: config.menu, goal: config.goal, counter: config.counter, likesGoal: config.likesGoal,
       tts: { mode: config.tts.mode, credit: config.tts.credit, browserVoiceHint: config.tts.browserVoiceHint },
       video: config.video, reactions: config.reactions, disclosure: config.disclosure,
     };

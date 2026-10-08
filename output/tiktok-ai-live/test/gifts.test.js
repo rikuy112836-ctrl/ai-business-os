@@ -28,7 +28,8 @@ test('連打中のギフトは数えず、連打終了時にまとめて数え�
 test('ギフト→反応の対応（名前優先、次にコイン数）', () => {
   const r = (giftName, coins) => pickReaction(config, { giftName, coins });
   assert.equal(r('Finger Heart', 5), 'heart');
-  assert.equal(r('rose', 1), 'heart');
+  assert.equal(r('rose', 1), 'fortune');
+  assert.equal(r('Heart Me', 1), 'fortune');
   assert.equal(r('Doughnut', 30), 'cheers');
   assert.equal(r('Hand Hearts', 100), 'dance');
   assert.equal(r('Galaxy', 1000), 'dance');
@@ -36,7 +37,7 @@ test('ギフト→反応の対応（名前優先、次にコイン数）', () =>
   assert.equal(r('Unknown', 1), 'heart');
 });
 
-test('ランキングはコインの多い順', () => {
+test('ランキング（目標なし）はコインの多い順', () => {
   const b = createBoard();
   b.addGift({ user: { id: '1', name: 'A' }, count: 1, coins: 5 });
   b.addGift({ user: { id: '2', name: 'B' }, count: 1, coins: 100 });
@@ -45,4 +46,19 @@ test('ランキングはコインの多い順', () => {
   assert.equal(b.totals.giftCount, 4);
   assert.equal(b.totals.coins, 115);
   assert.ok(b.isTopGifter('2'));
+});
+
+test('目標ギフト（今日のバラ）の本数・ハートミーの個数・本数順ランキング', () => {
+  const b = createBoard(config);
+  const g = (id, giftName, count, coins = 1) => b.addGift({ user: { id, name: id }, giftName, count, coins: coins * count });
+  g('みれい', 'Rose', 23);
+  g('ボビー', 'Rose', 10);
+  g('なんで', 'rose', 8);
+  g('大口', 'Galaxy', 1, 1000);
+  g('みれい', 'Heart Me', 4);
+  const snap = b.snapshot();
+  assert.equal(snap.totals.goal, 41);
+  assert.equal(snap.totals.counter, 4);
+  assert.deepEqual(snap.ranking.map((r) => [r.name, r.value]), [['みれい', 23], ['ボビー', 10], ['なんで', 8]]);
+  assert.ok(b.isTopGifter('大口'), 'コインの多い人も返信の優先対象');
 });

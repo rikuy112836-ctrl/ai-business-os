@@ -68,7 +68,7 @@
         <button id="mock-on">模擬コメント・ギフトを自動で流す</button>
         <button id="mock-off">止める</button>
         <button id="follow">フォロー</button>
-        <button id="like">いいね ×20</button>
+        <button id="like">いいね ×500</button>
         <button id="reset">集計リセット</button>
       </div>
       <p class="note">配信用画面: <a href="/overlay.html" target="_blank">/overlay.html</a>（OBS のブラウザソースに 1080×1920 で追加）</p>
@@ -111,19 +111,19 @@
     $('samples').appendChild(b);
   }
   const GIFTS = [
-    ['Rose', 'バラ', 1], ['Finger Heart', '指ハート', 5], ['Doughnut', 'ドーナツ', 30],
-    ['Perfume', '香水', 20], ['Hand Hearts', 'ハンドハート', 100], ['Galaxy', 'ギャラクシー', 1000],
+    ['Rose', 'バラ', 1, 1], ['Rose', 'バラ ×10連打', 1, 10], ['Heart Me', 'ハートミー', 1, 1], ['Finger Heart', '指ハート', 5, 1],
+    ['Doughnut', 'ドーナツ', 30, 1], ['Hand Hearts', 'ハンドハート', 100, 1], ['Galaxy', 'ギャラクシー', 1000, 1],
   ];
-  for (const [name, ja, coins] of GIFTS) {
+  for (const [name, ja, coins, count] of GIFTS) {
     const b = document.createElement('button');
-    b.innerHTML = `${ja}<small>${name}・${coins}コイン</small>`;
-    b.onclick = () => sendEvent('gift', { ...user(), giftName: name, diamondCount: coins, repeatCount: 1, repeatEnd: true });
+    b.innerHTML = `${ja}<small>${name}・${coins * count}コイン</small>`;
+    b.onclick = () => sendEvent('gift', { ...user(), giftName: name, diamondCount: coins, repeatCount: count, repeatEnd: true });
     $('gifts').appendChild(b);
   }
   $('mock-on').onclick = () => post('/api/mock', { enabled: true });
   $('mock-off').onclick = () => post('/api/mock', { enabled: false });
   $('follow').onclick = () => sendEvent('follow', user());
-  $('like').onclick = () => sendEvent('like', { ...user(), likeCount: 20 });
+  $('like').onclick = () => sendEvent('like', { ...user(), likeCount: 500 });
   $('reset').onclick = () => post('/api/reset');
 
   function setStatus(s) {
