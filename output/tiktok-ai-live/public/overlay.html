@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIキャラ配信画面</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+<!-- OBS: ブラウザソース 幅1080 高さ1920 / 「OBSで音声を制御する」にチェック -->
+<div id="stage">
+  <div id="video"></div>
+  <img id="mouth" alt="">
+  <div id="hud">
+    <div id="topbar">
+      <div id="clock"><span id="time">--:--</span><span id="date"></span></div>
+      <div id="stats">
+        <div><span class="k">ギフト</span><span id="gifts">0</span></div>
+        <div><span class="k">コイン</span><span id="coins">0</span></div>
+        <div><span class="k">いいね</span><span id="likes">0</span></div>
+      </div>
+    </div>
+    <div id="ai-badge"><b>AI</b><span id="disclosure"></span><small id="credit"></small></div>
+    <div id="ranking">
+      <h2>ギフトランキング</h2>
+      <ol id="rank-list"><li class="empty">まだギフトはありません</li></ol>
+    </div>
+    <div id="bubble" class="hidden">
+      <div id="bubble-from"></div>
+      <div id="bubble-text"></div>
+    </div>
+    <div id="banner" class="hidden"><span id="banner-emoji"></span><div><b id="banner-title"></b><span id="banner-sub"></span></div></div>
+    <button id="audio-unlock" class="hidden">クリックして音声をON</button>
+    <div id="conn" class="hidden">サーバー未接続</div>
+  </div>
+</div>
+<script type="module" src="js/overlay.js"></script>
+</body>
+</html>

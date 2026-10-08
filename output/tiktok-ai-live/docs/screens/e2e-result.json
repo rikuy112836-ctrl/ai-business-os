@@ -1,0 +1,85 @@
+{
+  "at": "2026-10-08T13:21:08.583Z",
+  "results": [
+    {
+      "name": "待機動画（clips）で起動",
+      "ok": true,
+      "detail": "mode=clips"
+    },
+    {
+      "name": "待機動画が再生されている",
+      "ok": true,
+      "detail": "0.62s → 1.42s"
+    },
+    {
+      "name": "口パクレイヤーが待機中に表示",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "AI利用の表示",
+      "ok": true,
+      "detail": "AIAIキャラクター配信｜返答・音声はAIが自動生成していますキャラクター：ミライ（オリジナル・仮素材） ／ 音声：VOICEVOX:ずんだもん"
+    },
+    {
+      "name": "時計の表示",
+      "ok": true,
+      "detail": "13:20"
+    },
+    {
+      "name": "コメントへの返信が吹き出しに出る",
+      "ok": true,
+      "detail": "ももさん、いらっしゃい！ゆっくりしていってね"
+    },
+    {
+      "name": "読み上げ中に口が動く",
+      "ok": true,
+      "detail": "closed,half,open"
+    },
+    {
+      "name": "指示の乗っ取りコメントにも通常の返事",
+      "ok": true,
+      "detail": "なるほど〜！testさん、教えてくれてありがとう"
+    },
+    {
+      "name": "ギフト Finger Heart（5コイン×2）→ heart の動画",
+      "ok": true,
+      "detail": "🫰指ハート！sora_77さん Finger Heart ×2"
+    },
+    {
+      "name": "ギフト Doughnut（30コイン×2）→ cheers の動画",
+      "ok": true,
+      "detail": "🥤乾杯！ねこまるさん Doughnut ×2"
+    },
+    {
+      "name": "ギフト Hand Hearts（100コイン×2）→ dance の動画",
+      "ok": true,
+      "detail": "💃ダンス！たけしさん Hand Hearts ×2"
+    },
+    {
+      "name": "反応のあと待機動画に戻る",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "口パクレイヤーは反応中に隠れ、待機で戻る",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ギフトランキング",
+      "ok": true,
+      "detail": "たけし200 / ねこまる60 / sora_7710"
+    },
+    {
+      "name": "ギフト数とコイン",
+      "ok": true,
+      "detail": "ギフト 6 / コイン 270"
+    },
+    {
+      "name": "画面のJSエラーなし",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

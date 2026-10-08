@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>仮キャラクター プレビュー</title>
+<style>
+  html, body { margin: 0; background: #111; }
+  #c { width: 1080px; height: 1920px; }
+</style>
+</head>
+<body>
+<!-- 使い方: character.html?state=heart  （tools/make-clips.mjs がコマ撮りに使う） -->
+<div id="c"></div>
+<script type="module">
+  import { createCharacter, STATES } from './js/character.js';
+  const q = new URLSearchParams(location.search);
+  const state = q.get('state') || 'idle';
+  const noMouth = q.get('mouth') === 'none';
+  const ch = createCharacter(document.getElementById('c'));
+  window.renderAt = (t) => ch.render(state, t, noMouth ? { mouth: null } : {});
+  window.STATES = STATES;
+  if (q.get('play') !== '0') {
+    const start = performance.now();
+    const loop = () => {
+      const d = STATES[state].duration;
+      window.renderAt(((performance.now() - start) / 1000) % d);
+      requestAnimationFrame(loop);
+    };
+    loop();
+  } else {
+    window.renderAt(0);
+  }
+</script>
+</body>
+</html>

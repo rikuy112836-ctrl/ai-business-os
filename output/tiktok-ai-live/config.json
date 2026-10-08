@@ -1,0 +1,65 @@
+{
+  "port": 8787,
+  "character": {
+    "name": "ミライ",
+    "persona": "星が好きな明るいオリジナルキャラクター。夜空の話と甘いものが好き。一人称は「ミライ」。語尾はやわらかい丁寧語。"
+  },
+  "ai": {
+    "provider": "auto",
+    "model": "claude-opus-5-5",
+    "effort": "low",
+    "useFallbacks": true,
+    "timeoutMs": 15000,
+    "maxChars": 45,
+    "minIntervalMs": 4000,
+    "maxQueue": 5,
+    "perUserCooldownMs": 15000
+  },
+  "tts": {
+    "mode": "voicevox",
+    "voicevoxUrl": "http://127.0.0.1:50021",
+    "speaker": 3,
+    "credit": "VOICEVOX:ずんだもん",
+    "browserVoiceHint": "Nanami"
+  },
+  "video": {
+    "clips": {
+      "idle": "clips/idle.webm",
+      "heart": "clips/heart.webm",
+      "cheers": "clips/cheers.webm",
+      "dance": "clips/dance.webm",
+      "thanks": "clips/thanks.webm"
+    },
+    "mouthLayer": {
+      "enabled": true,
+      "x": 540,
+      "y": 1078,
+      "width": 120,
+      "images": {
+        "closed": "mouth/closed.svg",
+        "half": "mouth/half.svg",
+        "open": "mouth/open.svg"
+      }
+    }
+  },
+  "reactions": {
+    "heart": { "label": "指ハート", "emoji": "🫰", "speech": "指ハート送っちゃう！" },
+    "cheers": { "label": "乾杯", "emoji": "🥤", "speech": "かんぱーい！" },
+    "dance": { "label": "ダンス", "emoji": "💃", "speech": "お礼にダンスするね！" },
+    "thanks": { "label": "ありがとう", "emoji": "🙇", "speech": "" }
+  },
+  "giftRules": [
+    { "names": ["Finger Heart", "指ハート", "Rose", "バラ"], "reaction": "heart" },
+    { "names": ["Doughnut", "ドーナツ", "Perfume", "香水", "Cheers", "乾杯"], "reaction": "cheers" },
+    { "minCoins": 100, "reaction": "dance" },
+    { "minCoins": 10, "reaction": "cheers" },
+    { "minCoins": 0, "reaction": "heart" }
+  ],
+  "followReaction": "thanks",
+  "ngWords": ["死ね", "殺す", "住所", "電話番号", "LINE交換"],
+  "sources": {
+    "mock": { "enabled": false, "intervalMs": 6000 },
+    "tikfinity": { "enabled": false, "url": "ws://127.0.0.1:21213/" }
+  },
+  "disclosure": "AIキャラクター配信｜返答・音声はAIが自動生成しています"
+}

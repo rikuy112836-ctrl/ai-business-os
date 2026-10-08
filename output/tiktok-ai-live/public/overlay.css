@@ -1,0 +1,87 @@
+:root {
+  --ink: #2a1f45;
+  --paper: rgba(255, 255, 255, 0.92);
+  --accent: #ff5c93;
+  --accent2: #7fd6c2;
+  --shadow: 0 10px 30px rgba(20, 10, 40, 0.35);
+}
+html, body {
+  margin: 0; height: 100%; overflow: hidden; background: #000;
+  font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", "IPAPGothic", sans-serif;
+}
+#stage {
+  position: absolute; left: 0; top: 0; width: 1080px; height: 1920px;
+  transform-origin: 0 0; overflow: hidden; background: #2d2357;
+}
+#video, #video > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+#video video { object-fit: cover; opacity: 0; }
+#video video.on { opacity: 1; }
+#mouth { position: absolute; pointer-events: none; display: none; }
+#hud { position: absolute; inset: 0; color: var(--ink); }
+
+/* TikTok の上部UI（配信者名・視聴者数）は上 ~170px を覆うので、その下から置く */
+#topbar { position: absolute; left: 36px; right: 36px; top: 180px; display: flex; justify-content: space-between; align-items: stretch; }
+#clock, #stats { background: var(--paper); border-radius: 26px; box-shadow: var(--shadow); padding: 14px 26px; }
+#clock { display: flex; flex-direction: column; justify-content: center; }
+#time { font-size: 64px; font-weight: 800; line-height: 1; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+#date { font-size: 24px; font-weight: 500; opacity: 0.7; margin-top: 4px; }
+#stats { display: flex; gap: 26px; align-items: center; }
+#stats > div { display: flex; flex-direction: column; align-items: center; min-width: 110px; }
+#stats .k { font-size: 22px; opacity: 0.65; }
+#stats span:not(.k) { font-size: 46px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
+
+#ai-badge {
+  position: absolute; left: 36px; right: 36px; top: 330px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: rgba(30, 20, 60, 0.78); color: #fff; border-radius: 20px; padding: 12px 22px; font-size: 26px; font-weight: 500;
+}
+#ai-badge b { background: var(--accent2); color: var(--ink); border-radius: 10px; padding: 2px 12px; font-weight: 800; }
+#ai-badge small { width: 100%; font-size: 20px; opacity: 0.75; padding-left: 4px; }
+
+#ranking {
+  position: absolute; left: 36px; top: 450px; width: 330px; background: var(--paper); border-radius: 26px;
+  box-shadow: var(--shadow); padding: 16px 20px 12px;
+}
+#ranking h2 { margin: 0 0 8px; font-size: 26px; color: var(--accent); }
+#ranking ol { margin: 0; padding: 0; list-style: none; counter-reset: r; }
+#ranking li { counter-increment: r; display: flex; align-items: center; gap: 10px; font-size: 25px; padding: 5px 0; border-top: 1px dashed rgba(42, 31, 69, 0.15); }
+#ranking li:first-child { border-top: none; }
+#ranking li::before { content: counter(r); width: 36px; height: 36px; border-radius: 50%; background: #eee; display: grid; place-items: center; font-weight: 800; font-size: 22px; flex: none; }
+#ranking li:nth-child(1)::before { background: #ffd54a; }
+#ranking li:nth-child(2)::before { background: #d9dde6; }
+#ranking li:nth-child(3)::before { background: #f0b27a; }
+#ranking li .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ranking li .c { font-weight: 800; font-variant-numeric: tabular-nums; }
+#ranking li.empty { font-size: 22px; opacity: 0.6; }
+#ranking li.empty::before { display: none; }
+
+#bubble {
+  position: absolute; left: 400px; right: 36px; top: 450px; min-height: 150px; background: #fff; border-radius: 32px;
+  box-shadow: var(--shadow); padding: 20px 28px; transition: opacity 0.25s, transform 0.25s;
+}
+#bubble::after {
+  content: ""; position: absolute; left: 120px; bottom: -34px; border: 20px solid transparent; border-top: 26px solid #fff; border-bottom: 0;
+}
+#bubble-from { font-size: 23px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#bubble-text { font-size: 40px; font-weight: 800; line-height: 1.35; margin-top: 6px; }
+#bubble.gift #bubble-text { color: var(--accent); }
+
+#banner {
+  position: absolute; left: 90px; right: 90px; top: 1230px; display: flex; align-items: center; gap: 22px;
+  background: linear-gradient(90deg, #ff5c93, #ff9a5c); color: #fff; border-radius: 40px; padding: 22px 34px;
+  box-shadow: var(--shadow); animation: pop 0.45s cubic-bezier(.2,1.6,.4,1);
+}
+#banner-emoji { font-size: 84px; line-height: 1; }
+#banner b { display: block; font-size: 52px; }
+#banner span:not(#banner-emoji) { font-size: 28px; opacity: 0.95; }
+
+.hidden { opacity: 0 !important; transform: translateY(16px); pointer-events: none; }
+#banner.hidden { display: none; }
+@keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+#audio-unlock {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font: inherit; font-size: 36px; font-weight: 800;
+  padding: 24px 40px; border: none; border-radius: 24px; background: var(--accent); color: #fff; cursor: pointer; box-shadow: var(--shadow);
+}
+#audio-unlock.hidden { display: none; }
+#conn { position: absolute; left: 36px; bottom: 36px; background: #c62828; color: #fff; padding: 10px 18px; border-radius: 12px; font-size: 24px; }
+#conn.hidden { display: none; }
