@@ -26,10 +26,12 @@ function tick() {
 setInterval(tick, 1000);
 tick();
 
-// ---------- 映像（待機動画のループ + 反応動画の差し込み） ----------
+// ---------- 映像（普段=PC作業 / 話す=前を向いて手振り のループ + ギフト反応の差し込み） ----------
+const LOOPS = ['idle', 'talk'];
 const video = {
   mode: 'clips', // 'clips' | 'live'
   current: 'idle',
+  base: 'idle', // 反応が終わったら戻るループ（話している間は talk）
   els: {},
   character: null,
   liveStart: 0,
@@ -41,7 +43,7 @@ const video = {
     if (!forceLive && clips.idle) {
       const ok = await Promise.all(Object.entries(clips).map(([state, src]) => this.load(state, src)));
       if (ok.every(Boolean)) {
-        this.els.idle.loop = true;
+        for (const l of LOOPS) if (this.els[l]) this.els[l].loop = true;
         this.show('idle');
         return;
       }
@@ -53,12 +55,13 @@ const video = {
     const loop = () => {
       const st = STATES[this.current];
       let t = (performance.now() - this.liveStart) / 1000;
-      if (this.current !== 'idle' && t >= st.duration) {
+      const looping = LOOPS.includes(this.current);
+      if (!looping && t >= st.duration) {
         this.finish();
         t = 0;
       }
-      this.character.render(this.current, this.current === 'idle' ? t % STATES.idle.duration : t,
-        this.current === 'idle' ? { mouth: lips.level } : {});
+      this.character.render(this.current, looping ? t % st.duration : t,
+        this.current === 'talk' ? { mouth: lips.level } : {});
       requestAnimationFrame(loop);
     };
     loop();
@@ -74,7 +77,7 @@ const video = {
       v.dataset.state = state;
       v.addEventListener('canplaythrough', () => resolve(true), { once: true });
       v.addEventListener('error', () => resolve(false), { once: true });
-      v.addEventListener('ended', () => { if (state !== 'idle') this.finish(); });
+      v.addEventListener('ended', () => { if (!LOOPS.includes(state)) this.finish(); });
       $('video').appendChild(v);
       this.els[state] = v;
     });
@@ -88,7 +91,7 @@ const video = {
         v.classList.add('on');
       } else {
         v.classList.remove('on');
-        if (s !== 'idle') v.pause();
+        v.pause();
       }
     }
   },
@@ -101,10 +104,26 @@ const video = {
     lips.updateVisibility();
   },
 
+  // 話し始め・話し終わりでループを切り替える（反応中なら反応のあとに反映）
+  setBase(state) {
+    if (this.base === state) return;
+    this.base = state;
+    if (LOOPS.includes(this.current)) {
+      this.current = state;
+      this.liveStart = performance.now();
+      if (this.mode === 'clips') this.show(state);
+      lips.updateVisibility();
+    }
+  },
+
+  get busy() {
+    return !LOOPS.includes(this.current);
+  },
+
   finish() {
-    this.current = 'idle';
+    this.current = this.base;
     this.liveStart = performance.now();
-    if (this.mode === 'clips') this.show('idle');
+    if (this.mode === 'clips') this.show(this.base);
     lips.updateVisibility();
     const cb = this.onReactionEnd;
     this.onReactionEnd = null;
@@ -140,8 +159,8 @@ const lips = {
     if (m.dataset.k !== k) { m.src = this.imgs[k]; m.dataset.k = k; }
   },
   updateVisibility() {
-    // 反応動画には笑顔の口が描き込まれているので、待機中だけ口レイヤーを出す
-    $('mouth').style.display = this.cfg?.enabled && video.mode === 'clips' && video.current === 'idle' ? 'block' : 'none';
+    // 口なしで書き出した「話す」動画のときだけ口レイヤーを重ねる（他の動画は口が描き込み済み）
+    $('mouth').style.display = this.cfg?.enabled && video.mode === 'clips' && video.current === 'talk' ? 'block' : 'none';
   },
 };
 
@@ -315,6 +334,7 @@ async function speakNext() {
   const out = $('r-text');
   const chars = [...item.text];
   out.textContent = '';
+  video.setBase('talk');
   try {
     await tts.speak(item.text, (progress, level) => {
       out.textContent = chars.slice(0, Math.ceil(Math.min(1, progress * 1.1) * chars.length)).join('');
@@ -323,6 +343,7 @@ async function speakNext() {
   } finally {
     out.textContent = item.text;
     wave.clear();
+    if (!speechQueue.length) video.setBase('idle');
     await new Promise((r) => setTimeout(r, 900));
     speakingNow = false;
     speakNext();
@@ -359,7 +380,7 @@ function renderMenu(cfg) {
 
 const reactionQueue = [];
 function nextReaction() {
-  if (video.current !== 'idle' || !reactionQueue.length) return;
+  if (video.busy || !reactionQueue.length) return;
   const r = reactionQueue.shift();
   const row = document.querySelector(`#menu .row[data-reaction="${r.reaction}"]`);
   if (row) row.classList.add('active');

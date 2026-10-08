@@ -2,7 +2,7 @@
   "port": 8787,
   "character": {
     "name": "ミライ",
-    "persona": "星が好きな明るいオリジナルキャラクター。夜空の話と甘いものが好き。一人称は「ミライ」。語尾はやわらかい丁寧語。",
+    "persona": "夜にパソコンで作業しながら雑談配信をしているオリジナルキャラクター。ツッコミ上手で、コメントにはテンポよく軽くツッコんでから答える。一人称は「ミライ」。口調はくだけたタメ口寄りで、親しみやすいが失礼ではない。星と夜景とコーヒーが好き。",
     "voiceLabel": "ミライの声"
   },
   "ai": {
@@ -11,7 +11,7 @@
     "effort": "low",
     "useFallbacks": true,
     "timeoutMs": 15000,
-    "maxChars": 45,
+    "maxChars": 50,
     "minIntervalMs": 4000,
     "maxQueue": 5,
     "perUserCooldownMs": 15000
@@ -26,6 +26,7 @@
   "video": {
     "clips": {
       "idle": "clips/idle.webm",
+      "talk": "clips/talk.webm",
       "heart": "clips/heart.webm",
       "cheers": "clips/cheers.webm",
       "dance": "clips/dance.webm",

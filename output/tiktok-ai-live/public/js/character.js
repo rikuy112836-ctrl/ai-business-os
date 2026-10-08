@@ -5,8 +5,10 @@
 
 const NS = 'http://www.w3.org/2000/svg';
 
+// idle: パソコンの画面を見てマウスを軽く動かす（普段）／ talk: 前を向いて手振りしながら話す（口は口パクレイヤー）
 export const STATES = {
-  idle: { duration: 4.0, loop: true },
+  idle: { duration: 6.0, loop: true },
+  talk: { duration: 4.0, loop: true },
   heart: { duration: 2.6 },
   cheers: { duration: 3.0 },
   dance: { duration: 4.0 },
@@ -17,7 +19,7 @@ export const STATES = {
 // キャラ全体の配置（右側のパネルと下のカードにかからないよう、少し左上に小さめに置く）
 const RIG = { x: -29, y: -124.5, s: 0.85 };
 
-// 待機映像の口の位置（口パクレイヤーをこの位置に重ねる）
+// 話す映像（talk）の口の位置（口パクレイヤーをこの位置に重ねる）
 const MOUTH_LOCAL = { x: 540, y: 1078 };
 export const MOUTH_ANCHOR = { x: MOUTH_LOCAL.x * RIG.s + RIG.x, y: MOUTH_LOCAL.y * RIG.s + RIG.y, width: 120 * RIG.s };
 
@@ -76,6 +78,10 @@ const TEMPLATE = `
     <stop offset="0.35" stop-color="#c9b6ff"/>
     <stop offset="1" stop-color="#5a3fc0"/>
   </radialGradient>
+  <radialGradient id="screenLight" cx="0.5" cy="0.7" r="0.6">
+    <stop offset="0" stop-color="#b9d6ff" stop-opacity="0.55"/>
+    <stop offset="1" stop-color="#b9d6ff" stop-opacity="0"/>
+  </radialGradient>
   <filter id="soft"><feGaussianBlur stdDeviation="7"/></filter>
 </defs>
 <rect width="1080" height="1920" fill="url(#room)"/>
@@ -123,7 +129,15 @@ const TEMPLATE = `
     <ellipse cx="405" cy="1055" rx="38" ry="22" fill="${C.cheek}" opacity="0.6"/>
     <ellipse cx="675" cy="1055" rx="38" ry="22" fill="${C.cheek}" opacity="0.6"/>
     <g id="mouth" transform="translate(${MOUTH_LOCAL.x} ${MOUTH_LOCAL.y})"></g>
+    <ellipse id="screen-glow" cx="540" cy="1150" rx="230" ry="150" fill="url(#screenLight)" opacity="0"/>
   </g>
+  <g id="desk">
+    <rect x="-200" y="1640" width="1500" height="900" fill="#3a2c26"/>
+    <rect x="-200" y="1640" width="1500" height="14" fill="#5a463c"/>
+    <rect x="390" y="1600" width="320" height="44" rx="8" fill="#22232b"/>
+    <rect x="404" y="1610" width="292" height="24" rx="5" fill="#33343e"/>
+  </g>
+  <g id="mouse"></g>
   <g id="armL"></g>
   <g id="armR"></g>
 </g>
@@ -165,14 +179,33 @@ function pose(state, t) {
   const p = {
     l: [104, 96], r: [76, 84], charX: 0, charY: 0, charRot: 0,
     headX: 0, headY: 0, headRot: 0, eyes: 'open', blink: 0, mouthHappy: false, fx: '',
+    look: { x: 0, y: 0 }, lids: 1, glow: 0, mouse: true,
   };
   const breathe = Math.sin((TAU * t) / 4);
   if (state === 'idle') {
-    // 頭は固定（口パクレイヤーの位置をずらさないため）。腕と胴だけ呼吸させる
-    p.l = [104 + breathe * 2, 96 + breathe * 3];
-    p.r = [76 - breathe * 2, 84 - breathe * 3];
+    // 普段：画面（手前の下側）を見ながらマウスを少し動かす。ときどきカメラの方をちらっと見る
+    const tb = t % 6;
+    const glance = tb > 4.2 && tb < 5.3 ? envelope(tb - 4.2, 0.25, 0.8, 1.1) : 0;
+    p.l = [122 + 2 * Math.sin(TAU * t / 3), 122 + 5 * Math.sin(TAU * t / 1.5) + 3 * Math.sin(TAU * t / 2)];
+    p.r = [70, 112 + 1.5 * breathe];
+    p.headY = 8 * (1 - glance);
+    p.headRot = -3 * (1 - glance);
+    p.look = { x: lerp(-5, 0, glance), y: lerp(12, 0, glance) };
+    p.lids = lerp(0.78, 1, glance);
+    p.glow = 0.55 + 0.12 * Math.sin(TAU * t / 2) + 0.08 * Math.sin(TAU * t * 1.5);
+    p.mouse = true;
+    for (const bt of [1.3, 3.4]) if (Math.abs(tb - bt) < 0.09) p.blink = 1 - Math.abs(tb - bt) / 0.09;
+    return p;
+  }
+  if (state === 'talk') {
+    // 話すとき：前を向いて手振り。頭は動かさない（口パクレイヤーの位置を固定するため）
+    const g1 = Math.sin(TAU * t / 2);
+    const g2 = Math.sin(TAU * t / 1 + 0.8);
+    p.l = [126 + 8 * g1, -52 + 26 * g2];
+    p.r = [58 - 6 * g1, -128 - 20 * Math.sin(TAU * t / 2 + 1.6)];
+    p.mouse = false;
     const tb = t % 4;
-    if (tb > 2.6 && tb < 2.78) p.blink = 1 - Math.abs(tb - 2.69) / 0.09;
+    if (Math.abs(tb - 2.2) < 0.09) p.blink = 1 - Math.abs(tb - 2.2) / 0.09;
     return p;
   }
   p.mouthHappy = true;
@@ -345,15 +378,16 @@ export function createCharacter(container) {
   const $ = (id) => svg.getElementById(id);
   const el = {
     lights: $('lights'), char: $('char'), head: $('head'), mouth: $('mouth'),
-    armL: $('armL'), armR: $('armR'), fx: $('fx'), eyeL: $('eyeL'), eyeR: $('eyeR'),
+    armL: $('armL'), armR: $('armR'), glow: $('screen-glow'), mouse: $('mouse'), desk: $('desk'), fx: $('fx'), eyeL: $('eyeL'), eyeR: $('eyeR'),
   };
 
-  function setEye(g, mode, blink) {
+  function setEye(g, mode, blink, look, lids) {
     const open = g.querySelector('.open');
     const happy = g.querySelector('.happy');
     open.setAttribute('visibility', mode === 'open' ? 'visible' : 'hidden');
     happy.setAttribute('visibility', mode === 'open' ? 'hidden' : 'visible');
-    open.setAttribute('transform', `scale(1 ${(1 - 0.88 * blink).toFixed(2)})`);
+    const sy = Math.min(lids, 1 - 0.88 * blink);
+    open.setAttribute('transform', `translate(${look.x.toFixed(1)} ${look.y.toFixed(1)}) scale(1 ${sy.toFixed(2)})`);
   }
 
   // mouth: null = 口を描かない（口パクレイヤーを上に重ねる待機動画用）、数値 = 開き具合
@@ -361,13 +395,21 @@ export function createCharacter(container) {
     const p = pose(state, t);
     el.lights.innerHTML = cityLights(t);
     el.char.setAttribute('transform', `translate(${p.charX.toFixed(1)} ${p.charY.toFixed(1)}) rotate(${p.charRot.toFixed(2)} 540 1500)`);
+    // 机は体と一緒に揺れないよう、体の動きを打ち消す
+    const still = `rotate(${(-p.charRot).toFixed(2)} 540 1500) translate(${(-p.charX).toFixed(1)} ${(-p.charY).toFixed(1)})`;
+    el.desk.setAttribute('transform', still);
+    el.mouse.setAttribute('transform', still);
     el.head.setAttribute('transform', `translate(${p.headX} ${p.headY.toFixed(1)}) rotate(${p.headRot.toFixed(2)} 540 1200)`);
     const a = armPath(SHOULDER_L, ...p.l);
     const b = armPath(SHOULDER_R, ...p.r);
     el.armL.innerHTML = a.markup;
     el.armR.innerHTML = b.markup;
-    setEye(el.eyeL, p.eyes === 'happy' ? 'happy' : 'open', p.blink);
-    setEye(el.eyeR, p.eyes === 'open' ? 'open' : 'happy', p.blink);
+    setEye(el.eyeL, p.eyes === 'happy' ? 'happy' : 'open', p.blink, p.look, p.lids);
+    setEye(el.eyeR, p.eyes === 'open' ? 'open' : 'happy', p.blink, p.look, p.lids);
+    el.glow.setAttribute('opacity', p.glow.toFixed(3));
+    // マウスは机の上。普段は手の下で動き、それ以外は定位置に置いておく
+    const mh = p.mouse ? a.hand : { x: 250, y: 1620 };
+    el.mouse.innerHTML = `<ellipse cx="${mh.x.toFixed(1)}" cy="${(Math.max(mh.y, 1600) + 26).toFixed(1)}" rx="34" ry="20" fill="#d8d8e2" stroke="#8d8d9c" stroke-width="4"/>`;
     if (opts.mouth === null) el.mouth.innerHTML = '';
     else el.mouth.innerHTML = mouthMarkup(opts.mouth ?? 0, p.mouthHappy && opts.mouth == null);
     el.fx.innerHTML = p.fx;

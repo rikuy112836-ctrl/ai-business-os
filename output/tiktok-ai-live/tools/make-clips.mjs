@@ -44,7 +44,8 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 
 for (const state of states) {
-  const mouth = state === 'idle' ? '&mouth=none' : '';
+  // 話す動画は口を描かずに書き出し、配信画面側で口パク画像を重ねる
+  const mouth = state === 'talk' ? '&mouth=none' : '';
   await page.goto(`http://127.0.0.1:${port}/character.html?state=${state}&play=0${mouth}`);
   const frames = Math.round(STATES[state].duration * FPS);
   const out = path.join(clipsDir, `${state}.webm`);
