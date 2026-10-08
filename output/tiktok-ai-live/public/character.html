@@ -17,7 +17,8 @@
   const state = q.get('state') || 'idle';
   const noMouth = q.get('mouth') === 'none';
   const photo = q.get('photo') || null;
-  const ch = createCharacter(document.getElementById('c'), { photo });
+  const placement = photo ? (await fetch('/api/config').then((r) => r.json()).catch(() => ({}))).video?.photoPlacement : null;
+  const ch = createCharacter(document.getElementById('c'), { photo, placement });
   // 写真の読み込みを待ってからコマ撮りする
   window.ready = photo ? new Image().decode.call(Object.assign(new Image(), { src: photo })).catch(() => {}) : Promise.resolve();
   window.renderAt = (t) => ch.render(state, t, noMouth ? { mouth: null } : {});

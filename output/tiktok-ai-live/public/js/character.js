@@ -371,7 +371,9 @@ function cityLights(t) {
 
 // 写真モード：背景を抜いた人物写真（1254x1254 想定）を、キャラの位置に置いて小さく動かす。
 // 写真1枚からは口や手は動かせないので、呼吸・うなずき・揺れだけ。本格的な動きは画像→動画の生成サービスで作った動画に差し替える。
-const PHOTO = { size: 1036, x: -88, y: 342, pivotX: 430, pivotY: 1150 };
+// 配置は config.json の video.photoPlacement で写真ごとに合わせる（顔の中心が x≈430, y≈690 に来るように）
+const PHOTO_DEFAULT = { x: -88, y: 342, width: 1036, height: 1036 };
+const PIVOT = { x: 430, y: 1150 };
 
 function photoPose(state, t) {
   const breathe = Math.sin((TAU * t) / 4);
@@ -409,13 +411,14 @@ export function createCharacter(container, opts = {}) {
   container.appendChild(svg);
   const $ = (id) => svg.getElementById(id);
   let photo = null;
+  const PHOTO = { ...PHOTO_DEFAULT, ...(opts.placement || {}) };
   if (opts.photo) {
     $('char').setAttribute('display', 'none');
     $('mouse').setAttribute('display', 'none');
     photo = document.createElementNS(NS, 'image');
     photo.setAttribute('href', opts.photo);
-    photo.setAttribute('width', PHOTO.size);
-    photo.setAttribute('height', PHOTO.size);
+    photo.setAttribute('width', PHOTO.width);
+    photo.setAttribute('height', PHOTO.height);
     $('photoLayer').appendChild(photo);
   }
   const el = {
@@ -453,7 +456,7 @@ export function createCharacter(container, opts = {}) {
     el.fx.innerHTML = p.fx;
     if (photo) {
       const q = photoPose(state, t);
-      photo.setAttribute('transform', `translate(${(PHOTO.x + q.x).toFixed(1)} ${(PHOTO.y + q.y).toFixed(1)}) rotate(${q.rot.toFixed(2)} ${PHOTO.pivotX - PHOTO.x} ${PHOTO.pivotY - PHOTO.y}) scale(${q.scale.toFixed(4)})`);
+      photo.setAttribute('transform', `translate(${(PHOTO.x + q.x).toFixed(1)} ${(PHOTO.y + q.y).toFixed(1)}) rotate(${q.rot.toFixed(2)} ${PIVOT.x - PHOTO.x} ${PIVOT.y - PHOTO.y}) scale(${q.scale.toFixed(4)})`);
     }
   }
 

@@ -25,7 +25,13 @@
   },
   "video": {
     "look": "photo",
-    "photo": "assets/person-cutout.png",
+    "photo": "assets/person2-cutout.png",
+    "photoPlacement": {
+      "x": -114,
+      "y": 327,
+      "width": 1094,
+      "height": 1092
+    },
     "clips": {
       "idle": "clips-photo/idle.webm",
       "talk": "clips-photo/talk.webm",

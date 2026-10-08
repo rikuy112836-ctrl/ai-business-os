@@ -117,10 +117,10 @@ CPU、メモリ、GPU、空き容量に加えて、OBS・TikTok LIVE Studio・Ti
 
 | 見た目 | 設定（`config.json` の `video`） | 動画 |
 |---|---|---|
-| **人物写真（いまの既定）** | `"look": "photo"`、`"photo": "assets/person-cutout.png"`、`clips` は `clips-photo/…`、`mouthLayer.enabled: false` | `public/clips-photo/` |
+| **人物写真（いまの既定）** | `"look": "photo"`、`"photo": "assets/person2-cutout.png"`、`photoPlacement`（写真の位置と大きさ）、`clips` は `clips-photo/…`、`mouthLayer.enabled: false` | `public/clips-photo/` |
 | 仮キャラクター「ミライ」 | `"look": "cartoon"`、`clips` は `clips/…`、`mouthLayer.enabled: true` | `public/clips/` |
 
-- 人物写真は、ChatGPT で生成された画像（`public/assets/person-original.png`）から背景を抜いて（`tools/cutout.py`）、夜景の部屋の机の奥に合成しています。
+- 人物写真は、ChatGPT で生成された画像（`public/assets/person2-original.png`。前の候補は `person-original.png`）から背景を抜いて（`tools/cutout.py`）、夜景の部屋の机の奥に合成しています。
 - **写真1枚から作れる動きは、呼吸・話すときのうなずきと揺れ・ギフトの演出（運勢の水晶玉、ハート、音符など）までです。** 口パク、PC を見る、マウスを動かす、手振りは写真では動かせません。
 - 実際に動く映像にするには、画像から動画を作るサービスで、この人物の「PC 作業」「前を向いて手振りで話す（口は閉じたまま）」の数秒ループ動画を作り、`public/clips-photo/idle.webm` と `talk.webm` に置き換えます。サービスは有料なので、**使う前に承認をいただきます**。
 - 写真を差し替えたら `python tools/cutout.py 元画像.png public/assets/person-cutout.png` → `npm run clips -- --photo` を実行すると、動画が作り直されます。
